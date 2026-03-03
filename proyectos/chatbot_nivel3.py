@@ -34,7 +34,7 @@ historial.append(msj_sistema)
 llm = ChatOllama(
     model=change_model(list_model, 0), 
     temperature=0.7,
-    base_url='http://10.90.20.12:11440'
+    base_url='http://localhost:11440'
 )
 
 
