@@ -4,12 +4,25 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import requests
 
 
-def chat_with_agent(msj_user: str):
+def chat_with_agent(msj_user: str) -> str:
+    response = chain.invoke({
+        "historial": historial, 
+        "question": msj_user
+    })
     historial.append(HumanMessage(content=msj_user))
-    response = llm.invoke(historial)
     historial.append(AIMessage(content=response.content))
     return response.content
-       
+
+
+def llm_models() -> list: 
+    
+    response = requests.get('http://localhost:8000/check-ollama')
+    
+    if response.status_code == 200: 
+        data = response.json()
+        list_model = data['modelos']['models']
+        name_model = [value for model in list_model for name, value in model.items() if name == 'model']
+        return name_model
 
 
 llm = ChatOllama(
@@ -20,13 +33,20 @@ llm = ChatOllama(
 
 
 historial = []
-msj_system = SystemMessage(content='Eres un asistente util responde con claridad')
 
-# prompt = ChatPromptTemplate.from_messages()
+# Formato
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "Eres un asistente util, responde con claridad."),
+    MessagesPlaceholder(variable_name='historial'),
+    ("human", "{question}")
+])
+
+chain = prompt | llm
 
 if __name__ == "__main__":
-    print("\nRefactorizando el chatbot")
-    print("Comandos: 'salir', 'reset' \n")
+    print('\n Refactorizando el chatbot')
+    print('Comandos: "salir", "reset" \n')
+    print(f'Lista de los modelos descargados: {llm_models()} \n')
     
     while True:
         user = input('Tu: ').lower()
@@ -37,9 +57,8 @@ if __name__ == "__main__":
         
         if user == 'reset':
             historial.clear()
-            print('Bot: Se ha limpiado el historial\n')
-            historial.append(SystemMessage(content=msj_system))
+            print('Memoria reiniciada\n')
             continue
-        
-        response = chat_with_agent(user)
-        print(f'Bot: {response}\n')
+
+        respuesta = chat_with_agent(user)
+        print(f"Bot: {respuesta}\n")
